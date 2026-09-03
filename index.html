@@ -1,0 +1,2386 @@
+<title>booki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:      #f1e4c6;
+    --paper-deep: #e0cd9d;
+    --case:       #cdb27e;
+    --wood:       #9a6a45;
+    --wood-dark:  #4a2f1f;
+    --moss:       #6f8f58;
+    --moss-dark:  #4c6640;
+    --berry:      #c0603f;
+    --berry-dark: #8f4028;
+    --gold:       #dca53a;
+    --ink:        #3a2a1c;
+    --ink-soft:   #6b5842;
+    --cream:      #fbf3e0;
+    --shadow:     rgba(43, 28, 15, 0.35);
+    --notch: 6px;
+    --pal-blue:   #7c93a3;
+    --pal-plum:   #8d7191;
+    --pal-sand:   #b99b63;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:      #211914;
+      --paper-deep: #170f0b;
+      --case:       #3a2a20;
+      --wood:       #b9835a;
+      --wood-dark:  #0f0906;
+      --moss:       #8fbb6e;
+      --moss-dark:  #5d7f49;
+      --berry:      #e28259;
+      --berry-dark: #a85332;
+      --gold:       #f0bf5a;
+      --ink:        #f1e4c6;
+      --ink-soft:   #cbb894;
+      --cream:      #2b2019;
+      --shadow:     rgba(0, 0, 0, 0.55);
+      --pal-blue:   #9db7c6;
+      --pal-plum:   #b18eb6;
+      --pal-sand:   #cbaa72;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:      #211914;
+    --paper-deep: #170f0b;
+    --case:       #3a2a20;
+    --wood:       #b9835a;
+    --wood-dark:  #0f0906;
+    --moss:       #8fbb6e;
+    --moss-dark:  #5d7f49;
+    --berry:      #e28259;
+    --berry-dark: #a85332;
+    --gold:       #f0bf5a;
+    --ink:        #f1e4c6;
+    --ink-soft:   #cbb894;
+    --cream:      #2b2019;
+    --shadow:     rgba(0, 0, 0, 0.55);
+    --pal-blue:   #9db7c6;
+    --pal-plum:   #b18eb6;
+    --pal-sand:   #cbaa72;
+  }
+
+  *{ box-sizing:border-box; }
+  /* stop mobile browsers from auto-boosting font size on isolated
+     text blocks (a wrapped tab, a lone line) — without this, the
+     same button can render visibly larger/"fatter" on some devices
+     or views than others even though no CSS rule here changes size */
+  html{ -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 20% -10%, color-mix(in srgb, var(--gold) 14%, transparent), transparent 55%),
+      var(--paper-deep);
+    color:var(--ink);
+    font-family:"Pixelify Sans", "Silkscreen", monospace;
+    min-height:100vh;
+    image-rendering: pixelated;
+  }
+  ::selection{ background:var(--gold); color:var(--wood-dark); }
+  button, input, select{ font-family:inherit; }
+  button{ cursor:pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+    outline:3px solid var(--gold);
+    outline-offset:2px;
+  }
+
+  h1,h2,h3{ font-family:"Silkscreen", monospace; margin:0; }
+
+  /* ---------- pixel-stepped panel frame ---------- */
+  .frame{
+    clip-path: polygon(
+      0 var(--notch), var(--notch) var(--notch), var(--notch) 0,
+      calc(100% - var(--notch)) 0, calc(100% - var(--notch)) var(--notch), 100% var(--notch),
+      100% calc(100% - var(--notch)), calc(100% - var(--notch)) calc(100% - var(--notch)), calc(100% - var(--notch)) 100%,
+      var(--notch) 100%, var(--notch) calc(100% - var(--notch)), 0 calc(100% - var(--notch))
+    );
+  }
+  .frame-outer{
+    background:var(--wood-dark);
+    padding:5px;
+    box-shadow: 0 10px 0 0 var(--shadow), 0 10px 18px 4px var(--shadow);
+  }
+  .frame-inner{
+    background:var(--paper);
+  }
+
+  /* ---------- layout ---------- */
+  .page{
+    max-width:920px;
+    margin:0 auto;
+    padding:22px 16px 120px;
+  }
+
+  .case{
+    padding:18px 18px 22px;
+  }
+
+  /* header / HUD */
+  .hud{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:18px;
+  }
+  .wordmark{
+    display:flex;
+    align-items:center;
+    gap:2px;
+    font-size:clamp(30px, 6vw, 42px);
+    color:var(--ink);
+    letter-spacing:2px;
+    line-height:1;
+    -webkit-text-stroke: 1px var(--ink);
+  }
+  :root[data-theme="dark"] .wordmark, @media (prefers-color-scheme: dark){ .wordmark{ } }
+  .wordmark .o-book{
+    width:0.62em;
+    height:0.86em;
+    transform: translateY(0.03em);
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+    filter: drop-shadow(1px 1px 0 var(--wood-dark));
+  }
+  .tagline{
+    font-family:"Pixelify Sans", monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:2px;
+    letter-spacing:0.5px;
+  }
+  .stat-badge{
+    font-family:"Pixelify Sans", monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    letter-spacing:0.5px;
+    white-space:nowrap;
+  }
+  .storage-note{
+    font-size:11px;
+    color:var(--berry-dark);
+    margin-top:6px;
+    max-width:220px;
+  }
+  .hud-right{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:8px;
+  }
+  .search-box{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--cream);
+    border:3px solid var(--wood-dark);
+    padding:6px 10px;
+  }
+  .search-box .search-icon{ font-size:13px; line-height:1; }
+  .search-box input[type="search"]{
+    border:none;
+    background:transparent;
+    font-size:13px;
+    color:var(--ink);
+    width:140px;
+    padding:2px 0;
+  }
+  .search-box input[type="search"]:focus-visible{ outline:none; }
+  .search-box:focus-within{ outline:3px solid var(--gold); outline-offset:1px; }
+  .search-box input[type="search"]::placeholder{ color:var(--ink-soft); }
+
+  .hud-right-top{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+
+  /* the cute little add-a-book button, up in the header */
+  .add-btn{
+    position:relative;
+    width:40px; height:40px;
+    flex:0 0 auto;
+    background:var(--berry);
+    color:var(--cream);
+    border:3px solid var(--wood-dark);
+    font-family:"Silkscreen", monospace;
+    font-size:20px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow: 2px 2px 0 var(--wood-dark);
+    transition: transform .08s ease;
+  }
+  .add-btn:hover{ background: color-mix(in srgb, var(--berry) 88%, white); transform:translateY(-1px); }
+  .add-btn:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--wood-dark); }
+  .add-btn::after{
+    content:"✦";
+    position:absolute;
+    top:-8px; right:-7px;
+    font-size:10px;
+    color:var(--gold);
+    filter:drop-shadow(1px 1px 0 var(--wood-dark));
+  }
+
+  /* sort tabs */
+  .sortbar{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    gap:8px;
+    margin-bottom:20px;
+  }
+  .sort-label{
+    font-size:11px;
+    color:var(--ink-soft);
+    letter-spacing:1px;
+    align-self:center;
+    margin-right:2px;
+    text-transform:uppercase;
+  }
+  .tab{
+    font-family:"Silkscreen", monospace;
+    font-size:12px;
+    background:var(--paper-deep);
+    color:var(--ink);
+    border:3px solid var(--wood-dark);
+    padding:8px 10px;
+    box-shadow: 3px 3px 0 var(--wood-dark);
+    transition: transform .05s ease;
+  }
+  .tab:hover{ background:var(--case); }
+  .tab:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--wood-dark); }
+  .tab[aria-pressed="true"]{
+    background:var(--moss);
+    color:var(--cream);
+  }
+  .tab.popped{
+    background:var(--gold);
+    color:var(--wood-dark);
+  }
+
+  /* the cute TBR bookstack — a stack of 3 leaning books on a small
+     ledge, centered in the open space after the sort tabs */
+  .tbr-stack{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    margin:0 auto;
+    background:transparent;
+    border:none;
+    padding:4px 12px 10px;
+    cursor:pointer;
+  }
+  .tbr-books{
+    position:relative;
+    width:76px;
+    height:50px;
+  }
+  .tbr-book{
+    position:absolute;
+    left:50%;
+    height:17px;
+    border:3px solid var(--wood-dark);
+    box-shadow:2px 2px 0 var(--wood-dark);
+  }
+  .tbr-book-1{ bottom:0;   width:62px; background:var(--moss);     transform:translateX(-50%) rotate(-3deg); }
+  .tbr-book-2{ bottom:13px;width:52px; background:var(--gold);     transform:translateX(-50%) rotate(2deg); }
+  .tbr-book-3{ bottom:26px;width:42px; background:var(--pal-plum); transform:translateX(-50%) rotate(-2deg); }
+  .tbr-ledge{
+    position:absolute;
+    left:50%;
+    bottom:-4px;
+    width:72px;
+    height:4px;
+    background:var(--wood-dark);
+    transform:translateX(-50%);
+  }
+  .tbr-label{
+    font-family:"Silkscreen", monospace;
+    font-size:14px;
+    letter-spacing:1.5px;
+    color:var(--ink-soft);
+  }
+  .tbr-count{
+    position:absolute;
+    top:-8px; right:-2px;
+    min-width:22px;
+    height:22px;
+    padding:0 4px;
+    border-radius:50%;
+    background:var(--berry);
+    color:var(--cream);
+    font-family:"Silkscreen", monospace;
+    font-size:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:3px solid var(--wood-dark);
+  }
+  .tbr-stack:hover .tbr-book{ filter:brightness(1.08); }
+  .tbr-stack:active .tbr-books{ transform:translateY(1px); }
+
+  /* the sliding "new books go to the..." toggle in the TBR popup */
+  .tbr-order-toggle{
+    position:relative;
+    display:flex;
+    border:2px solid var(--wood-dark);
+    background:var(--paper-deep);
+    margin-top:4px;
+    overflow:hidden;
+  }
+  .tbr-order-opt{
+    position:relative;
+    z-index:1;
+    flex:1;
+    background:transparent;
+    border:none;
+    padding:9px 6px;
+    font-family:"Silkscreen", monospace;
+    font-size:10px;
+    letter-spacing:.5px;
+    color:var(--ink-soft);
+    transition:color .15s ease;
+  }
+  .tbr-order-opt.active{ color:var(--cream); }
+  .tbr-order-thumb{
+    position:absolute;
+    top:0; left:0;
+    width:50%; height:100%;
+    background:var(--moss);
+    transition:transform .18s ease;
+    z-index:0;
+  }
+  .tbr-order-toggle[data-pos="top"] .tbr-order-thumb{ transform:translateX(100%); }
+
+  /* TBR popup list */
+  .tbr-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:34vh;
+    overflow-y:auto;
+    margin:14px 0 4px;
+  }
+  .tbr-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--paper-deep);
+    border:2px solid var(--wood-dark);
+    padding:8px 10px;
+  }
+  .tbr-row-info{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+  }
+  .tbr-row-title{
+    font-family:"Pixelify Sans", monospace;
+    font-size:13px;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .tbr-row-author{
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  .tbr-row-actions{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex:0 0 auto;
+  }
+  .btn-small{
+    flex:0 0 auto !important;
+    font-size:11px;
+    padding:7px 9px;
+    box-shadow:2px 2px 0 var(--wood-dark);
+    white-space:nowrap;
+  }
+  .btn-small:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--wood-dark); }
+  .tbr-remove-btn{
+    width:22px; height:22px;
+    flex:0 0 auto;
+    background:var(--berry);
+    color:var(--cream);
+    border:2px solid var(--wood-dark);
+    font-family:"Silkscreen", monospace;
+    font-size:12px;
+    line-height:1;
+  }
+
+  /* shelf */
+  .shelf-case{
+    background:var(--case);
+    border:5px solid var(--wood-dark);
+    padding:16px 16px 22px;
+  }
+  .shelf-viewport{
+    position:relative;
+    padding:0 14px;
+  }
+
+  /* Each bookshelf unit is a fixed 3-shelf case: exactly ROWS_PER_UNIT
+     rows, up to BOOKS_PER_ROW books each. Row height is fixed, so the
+     plank can be a plain CSS ::after under every row — no JS layout
+     measurement needed. */
+  .shelf-row{
+    position:relative;
+    display:flex;
+    align-items:flex-end;
+    gap:8px;
+    height:168px;
+    margin-bottom:26px;
+    max-width:392px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .shelf-row:last-of-type{ margin-bottom:22px; }
+  .shelf-row::after{
+    content:"";
+    position:absolute;
+    left:-6px; right:-6px;
+    top:100%;
+    height:16px;
+    z-index:1;
+    background:
+      linear-gradient(to bottom,
+        var(--wood-dark) 0 3px,
+        var(--wood) 3px 13px,
+        var(--gold) 13px 15px,
+        var(--wood-dark) 15px 16px
+      );
+    box-shadow: 0 4px 6px -2px var(--shadow);
+    pointer-events:none;
+  }
+
+  .shelf-page-label{
+    text-align:center;
+    font-family:"Silkscreen", monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:2px;
+    letter-spacing:.5px;
+  }
+
+  .page-arrow{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:30px; height:50px;
+    background:var(--paper-deep);
+    border:3px solid var(--wood-dark);
+    color:var(--ink);
+    font-family:"Silkscreen", monospace;
+    font-size:18px;
+    box-shadow: 2px 2px 0 var(--wood-dark);
+    z-index:6;
+  }
+  .page-arrow:hover{ background:var(--case); }
+  .page-arrow:active{ transform:translateY(calc(-50% + 2px)); box-shadow:0 0 0 var(--wood-dark); }
+  .page-arrow-left{ left:-6px; }
+  .page-arrow-right{ right:-6px; }
+
+  .spine{
+    position:relative;
+    z-index:2;
+    height:168px;
+    flex:0 0 auto;
+    border:3px solid var(--wood-dark);
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding:10px 3px 8px;
+    box-shadow: 2px 3px 0 var(--shadow);
+    transition: transform .08s ease;
+  }
+  .spine:hover{ transform: translateY(-6px); }
+  .spine:active{ transform: translateY(-2px); }
+  .spine::after{
+    content:"";
+    position:absolute;
+    top:6px; right:4px; bottom:6px;
+    width:3px;
+    background: repeating-linear-gradient(to bottom, var(--cream) 0 3px, transparent 3px 5px);
+    opacity:.85;
+  }
+  .spine .ribbon{
+    position:absolute;
+    top:-3px; left:8px;
+    width:8px; height:14px;
+    border:2px solid var(--wood-dark);
+    border-top:none;
+  }
+  .spine .ribbon.ribbon-num{
+    left:50%;
+    transform: translateX(-50%);
+    width:auto;
+    min-width:16px;
+    height:14px;
+    padding:0 3px;
+    background:var(--gold);
+    border:2px solid var(--wood-dark);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:"Silkscreen", monospace;
+    font-size:9px;
+    color:var(--wood-dark);
+    line-height:1;
+  }
+  .spine .title{
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family:"Silkscreen", monospace;
+    font-size:12px;
+    line-height:1.15;
+    max-height:140px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    color:var(--wood-dark);
+    text-shadow: 0 1px 0 rgba(255,255,255,.25);
+  }
+
+  .empty-shelf{
+    width:100%;
+    text-align:center;
+    padding:38px 12px 30px;
+    color:var(--ink);
+  }
+  .empty-shelf .bigicon{ font-size:34px; display:block; margin-bottom:8px; filter:drop-shadow(2px 2px 0 var(--wood-dark)); }
+  .empty-shelf p{ margin:4px 0; font-size:13px; font-weight:600; }
+  .empty-shelf .sub{ color: var(--ink-soft); font-size:11px; font-weight:400; }
+
+  /* modal */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background: rgba(20, 12, 6, .55);
+    display:flex; align-items:center; justify-content:center;
+    padding:18px;
+    z-index:50;
+  }
+  .modal{
+    width:100%;
+    max-width:380px;
+    max-height:88vh;
+    overflow-y:auto;
+  }
+  .modal-body{ padding:20px; }
+  .modal h2{
+    font-size:18px;
+    color:var(--ink);
+    margin-bottom:4px;
+  }
+  .modal .modal-sub{ font-size:11px; color:var(--ink-soft); margin-bottom:16px; }
+  .field{ margin-bottom:18px; }
+  .field:last-child{ margin-bottom:0; }
+  /* a field tightly bound to the one right after it (Title -> its
+     series toggle) — a smaller gap reads as "belongs together" rather
+     than as two unrelated fields. */
+  .field-tight{ margin-bottom:8px; }
+  .field label{
+    display:block;
+    font-size:11px;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .field input[type="text"], .field input[type="search"], .field input[type="date"], .field input[type="number"]{
+    width:100%;
+    background:var(--cream);
+    border:3px solid var(--wood-dark);
+    padding:9px 8px;
+    font-family:"Pixelify Sans", monospace;
+    font-size:14px;
+    color:var(--ink);
+  }
+  .field textarea{
+    width:100%;
+    background:var(--cream);
+    border:3px solid var(--wood-dark);
+    padding:9px 8px;
+    font-family:"Pixelify Sans", monospace;
+    font-size:13px;
+    line-height:1.4;
+    color:var(--ink);
+    min-height:72px;
+    resize:vertical;
+  }
+  .title-row{
+    display:flex;
+    gap:8px;
+    align-items:stretch;
+  }
+  .title-row input[type="text"]{ flex:1; min-width:0; }
+  .series-no{ flex:0 0 56px; }
+  .series-no input[type="number"]{ text-align:center; padding:9px 4px; height:100%; }
+  .series-toggle-btn{
+    display:block;
+    width:100%;
+    background:var(--paper-deep);
+    border:2px dashed var(--wood);
+    color:var(--ink-soft);
+    font-family:"Pixelify Sans", monospace;
+    font-size:12px;
+    text-align:left;
+    padding:9px 10px;
+  }
+  .series-toggle-btn:hover{ background:var(--case); color:var(--ink); }
+  .hint-link{
+    display:inline-block;
+    background:none;
+    border:none;
+    padding:7px 0 0;
+    font-family:"Pixelify Sans", monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    text-decoration:underline;
+    text-underline-offset:2px;
+  }
+  .hint-link:hover{ color:var(--berry-dark); }
+  .field input[type="date"]{ color-scheme: light; }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .field input[type="date"]{ color-scheme: dark; }
+  }
+  :root[data-theme="dark"] .field input[type="date"]{ color-scheme: dark; }
+  .field .hint{
+    display:block;
+    font-size:10px;
+    color:var(--ink-soft);
+    margin-top:5px;
+    text-transform:none;
+    letter-spacing:0;
+  }
+  .field-error{
+    font-size:11px;
+    color:var(--berry-dark);
+    margin-top:4px;
+    min-height:14px;
+  }
+
+  /* star rating (halves supported), used in the notes toggle + detail view */
+  .star-rating{
+    position:relative;
+    display:inline-block;
+    font-size:22px;
+    line-height:1;
+    letter-spacing:3px;
+    user-select:none;
+  }
+  .star-row{ white-space:nowrap; pointer-events:none; }
+  .star-row-back{ color: var(--case); }
+  .star-row-front{
+    position:absolute; top:0; left:0;
+    overflow:hidden;
+    color: var(--gold);
+    width:0%;
+    text-shadow: 0 1px 0 var(--wood-dark);
+  }
+  .star-click-layer{
+    position:absolute; top:0; left:0; right:0; bottom:0;
+    display:flex;
+  }
+  .star-click-layer button{
+    flex:1 1 0;
+    background:none;
+    border:none;
+    padding:0;
+    margin:0;
+    cursor:pointer;
+  }
+  .star-rating.readonly .star-click-layer{ display:none; }
+  .star-value{
+    display:inline-block;
+    margin-left:10px;
+    font-size:11px;
+    color:var(--ink-soft);
+    vertical-align:middle;
+  }
+  .modal-actions{
+    position:relative;
+    z-index:5;
+    display:flex;
+    gap:10px;
+    margin-top:6px;
+  }
+  .btn{
+    font-family:"Silkscreen", monospace;
+    font-size:12px;
+    border:3px solid var(--wood-dark);
+    padding:10px 14px;
+    box-shadow: 3px 3px 0 var(--wood-dark);
+    flex:1;
+    text-align:center;
+  }
+  .btn:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--wood-dark); }
+  .btn-primary{ background:var(--moss); color:var(--cream); }
+  .btn-primary:hover{ background: color-mix(in srgb, var(--moss) 85%, white); }
+  .btn-ghost{ background:var(--paper-deep); color:var(--ink); flex:0 0 auto; }
+  .btn-ghost:hover{ background:var(--case); }
+  .btn-danger{ background:var(--berry); color:var(--cream); }
+  .btn-danger:hover{ background: color-mix(in srgb, var(--berry) 85%, white); }
+
+  .modal-close{
+    position:absolute;
+    top:-12px; right:-12px;
+    width:30px; height:30px;
+    background:var(--berry);
+    color:var(--cream);
+    border:3px solid var(--wood-dark);
+    font-family:"Silkscreen", monospace;
+    font-size:14px;
+    z-index:10;
+  }
+  .modal-shell{ position:relative; z-index:1; }
+  .frame-outer.modal{ position:relative; z-index:1; }
+
+  .popup-search{
+    display:block;
+    width:100%;
+    background:var(--cream);
+    border:3px solid var(--wood-dark);
+    padding:8px 9px;
+    margin-top:10px;
+    font-family:"Pixelify Sans", monospace;
+    font-size:13px;
+    color:var(--ink);
+  }
+  .popup-search::placeholder{ color:var(--ink-soft); }
+  .index-list{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    max-height:48vh;
+    overflow-y:auto;
+    margin:12px 0;
+  }
+  .index-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    text-align:left;
+    background:var(--paper-deep);
+    border:2px solid var(--wood-dark);
+    padding:8px 10px;
+    font-family:"Pixelify Sans", monospace;
+    font-size:13px;
+    color:var(--ink);
+  }
+  .index-row:hover{ background:var(--case); }
+  .index-meta{ color:var(--ink-soft); font-size:11px; margin-left:auto; white-space:nowrap; }
+  .swatch-dot{ width:10px; height:10px; border:1px solid var(--wood-dark); flex:0 0 auto; }
+
+  @keyframes genreRowFlash{
+    0%, 100% { background: transparent; }
+    35% { background: var(--gold); }
+  }
+  .swatch-row{ display:flex; gap:5px; flex:0 0 auto; flex-wrap:wrap; }
+  .swatch-btn{
+    width:22px; height:22px;
+    border:2px solid var(--wood-dark);
+    padding:0;
+    position:relative;
+    flex:0 0 auto;
+  }
+  /* the "you are here" marker for the selected color — a little white
+     square that moves to whichever swatch you click */
+  .swatch-btn.active::after{
+    content:"";
+    position:absolute;
+    top:50%; left:50%;
+    width:8px; height:8px;
+    background:#fff;
+    border:1px solid var(--wood-dark);
+    transform:translate(-50%,-50%);
+  }
+  /* "Your Genres" rows — browse, recolor and delete all live here now */
+  .genre-idx-item.flash .genre-idx-row{ animation: genreRowFlash 0.9s ease; }
+  .genre-idx-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--paper-deep);
+    border:2px solid var(--wood-dark);
+    padding:6px 8px;
+  }
+  .genre-idx-swatch{
+    width:22px; height:22px;
+    flex:0 0 auto;
+    border:2px solid var(--wood-dark);
+    padding:0;
+  }
+  .genre-idx-name{
+    flex:1;
+    min-width:0;
+    text-align:left;
+    background:transparent;
+    border:none;
+    font-family:"Pixelify Sans", monospace;
+    font-size:13px;
+    color:var(--ink);
+    padding:4px 0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .genre-idx-del{
+    width:20px; height:20px;
+    flex:0 0 auto;
+    background:var(--berry);
+    color:var(--cream);
+    border:2px solid var(--wood-dark);
+    font-family:"Silkscreen", monospace;
+    font-size:11px;
+    line-height:1;
+  }
+  .genre-idx-recolor{ margin:8px 0 2px 2px; }
+
+  .genre-add-row{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:12px;
+  }
+  .genre-fab-add{
+    width:38px; height:38px;
+    flex:0 0 auto;
+    background:var(--moss);
+    color:var(--cream);
+    border:3px solid var(--wood-dark);
+    font-family:"Silkscreen", monospace;
+    font-size:18px;
+    line-height:1;
+    box-shadow:2px 2px 0 var(--wood-dark);
+    transition:transform .08s ease, background .1s ease;
+  }
+  .genre-fab-add:hover{ background: color-mix(in srgb, var(--moss) 85%, white); }
+  .genre-fab-add:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--wood-dark); }
+  .genre-fab-add.open{ background:var(--berry); }
+  .genre-add-panel{
+    margin-top:10px;
+    padding-top:12px;
+    border-top:2px dashed var(--wood-dark);
+  }
+
+  .genre-tag{
+    display:inline-block;
+    font-size:11px;
+    font-family:"Silkscreen", monospace;
+    padding:5px 9px;
+    border:2px solid var(--wood);
+    color:var(--ink);
+    margin: 0 6px 6px 0;
+  }
+
+  /* multi-genre chip input, used on the add/edit book forms */
+  .genre-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:8px;
+  }
+  .genre-chips:empty{ margin-bottom:0; }
+  .genre-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    background:var(--cream);
+    border:2px solid var(--wood-dark);
+    padding:4px 6px 4px 9px;
+    font-family:"Pixelify Sans", monospace;
+    font-size:12px;
+    color:var(--ink);
+  }
+  .genre-chip-remove{
+    background:none;
+    border:none;
+    padding:0;
+    font-family:"Silkscreen", monospace;
+    font-size:13px;
+    line-height:1;
+    color:var(--berry-dark);
+  }
+  .detail-row{ margin-bottom:12px; }
+  .detail-row .k{ font-size:10px; letter-spacing:.5px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:3px;}
+  .detail-row .v{ font-size:15px; color:var(--ink); font-family:"Pixelify Sans", monospace; }
+  .detail-title{ font-family:"Silkscreen", monospace; font-size:19px; color:var(--ink); margin-bottom:2px; line-height:1.3; }
+
+  .visually-hidden{
+    position:absolute; width:1px; height:1px; overflow:hidden;
+    clip:rect(0 0 0 0); white-space:nowrap;
+  }
+
+  [hidden]{ display:none !important; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+
+  @media (max-width:520px){
+    .hud{ flex-direction:column; align-items:flex-start; }
+    .hud-right{ align-items:flex-start; width:100%; }
+    .search-box{ width:100%; }
+    .search-box input[type="search"]{ width:100%; }
+
+    /* trim the decorative framing on phone screens — every layer of
+       padding here eats into the width the bookshelf actually gets,
+       and on a narrow screen that adds up fast. */
+    .page{ padding:16px 8px 100px; }
+    .frame-outer{ padding:3px; }
+    .case{ padding:12px 10px 16px; }
+    .shelf-case{ border-width:4px; padding:10px 8px 16px; }
+
+    /* The row itself now fills whatever width is actually left (instead
+       of guessing a fixed pixel cap), and each of the 8 spines below is
+       flex:1 so they always divide that width evenly — this is what
+       guarantees a full 8-book shelf fits with nothing spilling out,
+       on any phone, without needing to know its exact screen size. */
+    .shelf-row{ height:150px; gap:4px; margin-bottom:22px; max-width:none; width:100%; }
+    .spine{ height:150px; flex:1 1 0; width:auto; min-width:0; padding-left:2px; padding-right:2px; }
+    .spine .title{ font-size:11px; }
+    .shelf-viewport{ padding:0 6px; }
+    .page-arrow{ width:22px; height:42px; font-size:14px; }
+    .page-arrow-left{ left:-4px; }
+    .page-arrow-right{ right:-4px; }
+    .tbr-stack{ margin:6px auto 0; }
+  }
+</style>
+
+<div class="page">
+  <div class="frame frame-outer">
+    <div class="frame case frame-inner">
+
+      <div class="hud">
+        <div>
+          <div class="wordmark" role="img" aria-label="booki">
+            b<svg class="o-book" viewBox="0 0 8 10" aria-hidden="true"><rect width="8" height="10" fill="var(--moss)"/><rect width="1.5" height="10" fill="var(--moss-dark)"/><rect x="6.5" y="1" width="1" height="8" fill="var(--cream)"/><rect x="3" y="0" width="1.5" height="3" fill="var(--gold)"/></svg><svg class="o-book" viewBox="0 0 8 10" aria-hidden="true"><rect width="8" height="10" fill="var(--berry)"/><rect width="1.5" height="10" fill="var(--berry-dark)"/><rect x="6.5" y="1" width="1" height="8" fill="var(--cream)"/><rect x="3" y="0" width="1.5" height="3" fill="var(--gold)"/></svg>ki
+          </div>
+          <div class="tagline">your reading shelf</div>
+        </div>
+        <div class="hud-right">
+          <div class="hud-right-top">
+            <div class="search-box">
+              <span class="search-icon" aria-hidden="true">🔎</span>
+              <input type="search" id="searchInput" placeholder="Search" aria-label="Search your bookshelf" autocomplete="off">
+            </div>
+            <button type="button" class="add-btn" id="fabAdd" aria-label="Add a book to your shelf" title="Add a book">+</button>
+          </div>
+          <span class="stat-badge" id="statBadge">📚 0 books</span>
+          <div class="storage-note" id="storageNote" hidden>playing in local-only mode &mdash; this browser only</div>
+        </div>
+      </div>
+
+      <div class="sortbar" role="group" aria-label="Sort your shelf">
+        <span class="sort-label">sort:</span>
+        <button class="tab" data-sort="author" aria-pressed="true">Author</button>
+        <button class="tab" data-sort="genre" aria-pressed="false">Genre</button>
+        <button class="tab" data-sort="alpha" aria-pressed="false">A&ndash;Z</button>
+        <button class="tab" data-sort="date" aria-pressed="false">Recently Added</button>
+        <button type="button" class="tbr-stack" id="tbrStackBtn" aria-label="Your to-be-read list">
+          <span class="tbr-books" aria-hidden="true">
+            <span class="tbr-book tbr-book-3"></span>
+            <span class="tbr-book tbr-book-2"></span>
+            <span class="tbr-book tbr-book-1"></span>
+            <span class="tbr-ledge"></span>
+          </span>
+          <span class="tbr-label">TBR</span>
+          <span class="tbr-count" id="tbrCount" hidden>0</span>
+        </button>
+      </div>
+
+      <div class="shelf-case" id="shelfCase" aria-live="polite">
+        <div class="shelf-viewport">
+          <button type="button" class="page-arrow page-arrow-left" id="pageLeft" aria-label="Previous bookshelf" hidden>&lsaquo;</button>
+          <div id="shelfBooks"><!-- rendered by JS --></div>
+          <button type="button" class="page-arrow page-arrow-right" id="pageRight" aria-label="Next bookshelf" hidden>&rsaquo;</button>
+        </div>
+        <div class="shelf-page-label" id="shelfPageLabel" hidden></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<datalist id="genreList"><!-- populated from genreState by JS --></datalist>
+
+<!-- Add Book Modal -->
+<div class="modal-backdrop" id="addBackdrop" hidden>
+  <div class="modal-shell">
+    <button class="modal-close" id="addClose" aria-label="Close">x</button>
+    <div class="frame frame-outer modal">
+      <div class="frame frame-inner modal-body">
+        <h2>Add a Book</h2>
+        <div class="modal-sub">drop a new title onto your shelf</div>
+        <form id="addForm">
+          <div class="field field-tight">
+            <label for="fTitle">Title</label>
+            <input type="text" id="fTitle" required maxlength="120" autocomplete="off">
+            <div class="field-error" id="errTitle"></div>
+          </div>
+          <div id="addSeriesWrap"></div>
+          <div class="field">
+            <label for="fAuthor">Author</label>
+            <input type="text" id="fAuthor" required maxlength="90" autocomplete="off">
+            <div class="field-error" id="errAuthor"></div>
+          </div>
+          <div class="field">
+            <label for="fGenreInput">Genre(s) <span style="text-transform:none;">(optional)</span></label>
+            <div class="genre-chips" id="fGenreChips"></div>
+            <input type="text" id="fGenreInput" list="genreList" maxlength="40" autocomplete="off" placeholder="e.g. Fantasy">
+            <span class="hint">press Enter or comma to add another</span>
+          </div>
+          <div class="field">
+            <label for="fDate">Date Added</label>
+            <input type="date" id="fDate" required>
+            <span class="hint">defaults to today &mdash; click to backdate it</span>
+          </div>
+          <div id="addNotesWrap"></div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="addCancel">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add to Shelf</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Book Detail Modal -->
+<div class="modal-backdrop" id="detailBackdrop" hidden>
+  <div class="modal-shell">
+    <button class="modal-close" id="detailClose" aria-label="Close">x</button>
+    <div class="frame frame-outer modal">
+      <div class="frame frame-inner modal-body" id="detailBody">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Index / Genre-manager popup (opened by re-clicking or double-clicking an active sort tab) -->
+<div class="modal-backdrop" id="popupBackdrop" hidden>
+  <div class="modal-shell">
+    <button class="modal-close" id="popupClose" aria-label="Close">x</button>
+    <div class="frame frame-outer modal">
+      <div class="frame frame-inner modal-body" id="popupBody">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var books = [];          // {id, title, author, genre, dateAdded, addedAt}
+  var sortMode = "author";
+  var searchQuery = "";
+  var dbRef = null;
+  var localMode = false;
+  var LOCAL_KEY = "bllk_books_v1";
+
+  var shelfCase = document.getElementById("shelfCase");
+  var statBadge = document.getElementById("statBadge");
+  var storageNote = document.getElementById("storageNote");
+  var searchInput = document.getElementById("searchInput");
+
+  var shelfBooks = document.getElementById("shelfBooks");
+  var pageLeft = document.getElementById("pageLeft");
+  var pageRight = document.getElementById("pageRight");
+  var shelfPageLabel = document.getElementById("shelfPageLabel");
+
+  // A bookshelf unit is a fixed physical object: 3 shelves, 8 books each.
+  var ROWS_PER_UNIT = 3;
+  var BOOKS_PER_ROW = 8;
+  var UNIT_CAPACITY = ROWS_PER_UNIT * BOOKS_PER_ROW;
+  var currentShelfPage = 0;
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function todayISO(){
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
+  }
+  function formatDate(iso){
+    if(!iso) return "unknown";
+    var parts = iso.split("-");
+    if(parts.length !== 3) return iso;
+    var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var mi = parseInt(parts[1],10)-1;
+    return (months[mi]||parts[1]) + " " + parseInt(parts[2],10) + ", " + parts[0];
+  }
+  function debounce(fn, ms){
+    var t;
+    return function(){
+      var args = arguments;
+      clearTimeout(t);
+      t = setTimeout(function(){ fn.apply(null, args); }, ms);
+    };
+  }
+
+  // every book is the same (skinny) thickness, regardless of title length.
+  // On phone-width screens the spine isn't given a fixed pixel width at
+  // all (see the .spine flex rule in the mobile media query) — the row
+  // divides whatever space it actually has eight ways, so exactly 8
+  // books always fit the shelf no matter how narrow the device is.
+  function isMobileShelf(){
+    return !!(window.matchMedia && window.matchMedia("(max-width:520px)").matches);
+  }
+  function spineWidth(){
+    return isMobileShelf() ? 34 : 42;
+  }
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function hasSeries(b){ return b.seriesNo !== null && b.seriesNo !== undefined && b.seriesNo !== ""; }
+  function primaryGenre(book){ return (book.genres && book.genres.length) ? book.genres[0] : ""; }
+  /* Reshapes a stored/raw book record into the app's internal shape.
+     Accepts both the current multi-genre "genres" array field and the
+     older single "genre" string field, so existing saved books keep
+     working after this upgrade. */
+  function normalizeBook(id, raw){
+    raw = raw || {};
+    var genres;
+    if(Array.isArray(raw.genres)){
+      genres = raw.genres.map(function(g){ return String(g).trim(); }).filter(function(g){ return g; });
+    } else if(raw.genre && String(raw.genre).trim()){
+      genres = [String(raw.genre).trim()];
+    } else {
+      genres = [];
+    }
+    return {
+      id: id,
+      title: raw.title || "",
+      author: raw.author || "",
+      genres: genres,
+      dateAdded: raw.dateAdded || "",
+      addedAt: raw.addedAt || 0,
+      seriesName: raw.seriesName || "",
+      seriesNo: (raw.seriesNo === undefined ? "" : raw.seriesNo),
+      rating: (raw.rating === undefined ? "" : raw.rating),
+      notes: raw.notes || ""
+    };
+  }
+
+  /* ---------------- genre colors (pastel, earthy, user-editable) ---------------- */
+  var PALETTE_KEYS = ["sage","clay","honey","oak","blue","plum","sand"];
+  var PALETTE_VAR = {
+    sage:"--moss", clay:"--berry", honey:"--gold", oak:"--wood",
+    blue:"--pal-blue", plum:"--pal-plum", sand:"--pal-sand"
+  };
+  var DEFAULT_GENRES = [
+    {name:"Fantasy", color:"sage"}, {name:"Sci-Fi", color:"blue"},
+    {name:"Romance", color:"clay"}, {name:"Mystery", color:"plum"},
+    {name:"Horror", color:"oak"}, {name:"Classic", color:"honey"},
+    {name:"Nonfiction", color:"sand"}, {name:"Poetry", color:"plum"},
+    {name:"Young Adult", color:"clay"}, {name:"Graphic Novel", color:"blue"},
+    {name:"Manga", color:"sage"}, {name:"Webtoon", color:"honey"},
+    {name:"Cozy", color:"sand"}
+  ];
+  var GENRE_LOCAL_KEY = "bllk_genres_v1";
+  var genreState = { entries: [] };
+  var genreDocRef = null;
+
+  function hashStr(s){
+    var h = 0;
+    for(var i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) >>> 0; }
+    return h;
+  }
+  function defaultColorFor(name){
+    return PALETTE_KEYS[hashStr(name.trim().toLowerCase()) % PALETTE_KEYS.length];
+  }
+  function findGenreEntry(name){
+    var key = (name||"").trim().toLowerCase();
+    if(!key) return null;
+    for(var i=0;i<genreState.entries.length;i++){
+      if(genreState.entries[i].name.trim().toLowerCase() === key) return genreState.entries[i];
+    }
+    return null;
+  }
+  function genreColor(genre){
+    if(!genre || !genre.trim()) return "var(--wood)";
+    var entry = findGenreEntry(genre);
+    var colorKey = entry ? entry.color : defaultColorFor(genre);
+    return "var(" + PALETTE_VAR[colorKey] + ")";
+  }
+  function saveGenreLocal(){
+    try{ localStorage.setItem(GENRE_LOCAL_KEY, JSON.stringify(genreState.entries)); }catch(e){}
+  }
+  function loadGenreLocal(){
+    try{
+      var raw = localStorage.getItem(GENRE_LOCAL_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function saveGenreState(){
+    if(genreDocRef){
+      genreDocRef.set({entries: genreState.entries}).catch(function(){ saveGenreLocal(); });
+    } else {
+      saveGenreLocal();
+    }
+  }
+  function rebuildGenreDatalist(){
+    var dl = document.getElementById("genreList");
+    if(!dl) return;
+    dl.innerHTML = "";
+    genreState.entries.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(e){
+      var opt = document.createElement("option");
+      opt.value = e.name;
+      dl.appendChild(opt);
+    });
+  }
+  /* Genre documents that come from the db capability arrive frozen
+     (per the platform's own docs: "delivered snapshots and their
+     data() are frozen ... don't mutate them, clone a body before
+     editing it for a write"). So genreState.entries and everything
+     inside it is treated as read-only from here on — every change
+     below builds a brand-new array/object instead of pushing onto or
+     writing into the existing one, whether or not the current copy
+     actually came from a live snapshot. */
+  function ensureGenreRegistered(name, colorKey){
+    var trimmed = (name||"").trim();
+    if(!trimmed || findGenreEntry(trimmed)) return;
+    genreState.entries = genreState.entries.concat([{name: trimmed, color: colorKey || defaultColorFor(trimmed)}]);
+    saveGenreState();
+    rebuildGenreDatalist();
+  }
+  /* Self-healing pass: any genre tagged on a book but missing from the
+     palette (genreState.entries) gets auto-registered. This is what
+     keeps "Your Genres" and "Edit Genres" showing the exact same list —
+     both are rendered from genreState.entries, and this keeps that
+     list a superset of every genre actually in use. */
+  function syncGenresFromBooks(){
+    var additions = [];
+    books.forEach(function(b){
+      (b.genres || []).forEach(function(g){
+        var trimmed = (g || "").trim();
+        var already = findGenreEntry(trimmed) || additions.some(function(a){ return a.name.toLowerCase() === trimmed.toLowerCase(); });
+        if(trimmed && !already){
+          additions.push({name: trimmed, color: defaultColorFor(trimmed)});
+        }
+      });
+    });
+    if(additions.length){
+      genreState.entries = genreState.entries.concat(additions);
+      saveGenreState();
+      rebuildGenreDatalist();
+    }
+  }
+  /* ---------------- TBR (to be read) ---------------- */
+  /* Each TBR entry is stored as its own document (mirroring the "books"
+     collection) rather than one array packed into a single doc. A
+     single-doc array needs a full read-modify-write set() per change,
+     which races when entries are added back-to-back (exactly the kind
+     of rapid-fire adding a TBR queue invites) — last write wins and
+     earlier adds can vanish. Independent per-entry documents make every
+     add/remove its own atomic write, so nothing can get clobbered. */
+  var TBR_LOCAL_KEY = "bllk_tbr_v1";
+  var tbrState = { entries: [] };
+  var tbrColRef = null;
+  var tbrPopupRefresh = null; // set while the TBR popup is open, so a
+                              // confirmed write can redraw it live
+
+  var TBR_ORDER_KEY = "bllk_tbr_addpos_v1";
+  function loadTbrOrderPref(){
+    try{ return localStorage.getItem(TBR_ORDER_KEY) === "top" ? "top" : "bottom"; }catch(e){ return "bottom"; }
+  }
+  function saveTbrOrderPref(v){ try{ localStorage.setItem(TBR_ORDER_KEY, v); }catch(e){} }
+  var tbrAddPosition = loadTbrOrderPref(); // "bottom" (default) or "top"
+
+  function saveTbrLocal(){
+    try{ localStorage.setItem(TBR_LOCAL_KEY, JSON.stringify(tbrState.entries)); }catch(e){}
+  }
+  function loadTbrLocal(){
+    try{
+      var raw = localStorage.getItem(TBR_LOCAL_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function addTbrEntry(title, author){
+    var entry = { title: title, author: author || "", addedAt: Date.now() };
+    if(tbrColRef){
+      tbrColRef.add(entry).catch(function(){
+        entry.id = "local-" + Date.now() + "-" + Math.random().toString(36).slice(2,7);
+        tbrState.entries.push(entry);
+        saveTbrLocal();
+        updateTbrBadge();
+      });
+    } else {
+      entry.id = "local-" + Date.now() + "-" + Math.random().toString(36).slice(2,7);
+      tbrState.entries.push(entry);
+      saveTbrLocal();
+      updateTbrBadge();
+    }
+  }
+  function removeTbrEntry(id){
+    if(tbrColRef){
+      tbrColRef.doc(id).delete().catch(function(){});
+    } else {
+      tbrState.entries = tbrState.entries.filter(function(e){ return e.id !== id; });
+      saveTbrLocal();
+      updateTbrBadge();
+    }
+  }
+  function updateTbrBadge(){
+    var el = document.getElementById("tbrCount");
+    if(!el) return;
+    var n = tbrState.entries.length;
+    el.textContent = n > 99 ? "99+" : String(n);
+    el.hidden = n === 0;
+  }
+
+  function swatchRowHTML(genreName, activeColor){
+    return PALETTE_KEYS.map(function(k){
+      var active = k === activeColor ? " active" : "";
+      var genreAttr = genreName ? ' data-genre="' + escapeHtml(genreName) + '"' : "";
+      return '<button type="button" class="swatch-btn' + active + '" data-color="' + k + '"' + genreAttr +
+        ' style="background:var(' + PALETTE_VAR[k] + ')" aria-label="' + k + '"></button>';
+    }).join('');
+  }
+
+  /* ---------------- persistence ---------------- */
+  function loadLocal(){
+    try{
+      var raw = localStorage.getItem(LOCAL_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return arr.map(function(b){ return normalizeBook(b.id, b); });
+    }catch(e){ return []; }
+  }
+  function saveLocal(){
+    try{ localStorage.setItem(LOCAL_KEY, JSON.stringify(books)); }catch(e){}
+  }
+
+  function addBook(entry){
+    if(dbRef){
+      dbRef.add(entry).catch(function(){
+        // fall back silently to local if a write fails
+        entry.id = "local-" + Date.now();
+        books.push(entry);
+        saveLocal();
+        render();
+      });
+    } else {
+      entry.id = "local-" + Date.now() + "-" + Math.random().toString(36).slice(2,7);
+      books.push(entry);
+      saveLocal();
+      render();
+    }
+  }
+  function deleteBook(id){
+    if(dbRef){
+      dbRef.doc(id).delete().catch(function(){});
+    } else {
+      books = books.filter(function(b){ return b.id !== id; });
+      saveLocal();
+      render();
+    }
+  }
+  function patchLocal(id, fields){
+    books = books.map(function(b){
+      if(b.id !== id) return b;
+      var updated = {};
+      for(var k in b){ updated[k] = b[k]; }
+      for(var k2 in fields){ updated[k2] = fields[k2]; }
+      return updated;
+    });
+    saveLocal();
+    render();
+  }
+  function updateBook(id, fields){
+    if(dbRef){
+      dbRef.doc(id).update(fields).catch(function(){ patchLocal(id, fields); });
+    } else {
+      patchLocal(id, fields);
+    }
+  }
+
+  function initStorage(){
+    if(window.claude && typeof window.claude.use === "function"){
+      window.claude.use("db").then(function(db){
+        if(!db){ startLocal(); return; }
+        dbRef = db.collection("books");
+        dbRef.onSnapshot(function(snap){
+          books = snap.docs.map(function(d){ return normalizeBook(d.id, d.data()); });
+          render();
+        }, function(){ startLocal(); });
+
+        genreDocRef = db.doc("meta/genres");
+        genreDocRef.onSnapshot(function(snap){
+          var data = snap.exists ? snap.data() : null;
+          if(data && Array.isArray(data.entries) && data.entries.length){
+            genreState.entries = data.entries;
+          } else if(genreState.entries.length === 0){
+            genreState.entries = DEFAULT_GENRES.slice();
+            genreDocRef.set({entries: genreState.entries}).catch(function(){});
+          }
+          rebuildGenreDatalist();
+          render();
+        }, function(){
+          if(!genreState.entries.length){
+            genreState.entries = loadGenreLocal() || DEFAULT_GENRES.slice();
+            rebuildGenreDatalist();
+          }
+        });
+
+        tbrColRef = db.collection("tbr");
+        tbrColRef.onSnapshot(function(snap){
+          tbrState.entries = snap.docs.map(function(d){
+            var data = d.data() || {};
+            return { id: d.id, title: data.title || "", author: data.author || "", addedAt: data.addedAt || 0 };
+          });
+          updateTbrBadge();
+          if(tbrPopupRefresh) tbrPopupRefresh();
+        }, function(){
+          tbrState.entries = loadTbrLocal() || [];
+          updateTbrBadge();
+        });
+      }).catch(function(){ startLocal(); });
+      // safety net: if db never resolves, fall back after a short wait
+      setTimeout(function(){ if(!dbRef && !localMode) startLocal(); }, 4000);
+    } else {
+      startLocal();
+    }
+  }
+  function startLocal(){
+    if(localMode) return;
+    localMode = true;
+    storageNote.hidden = false;
+    books = loadLocal();
+    genreState.entries = loadGenreLocal() || DEFAULT_GENRES.slice();
+    rebuildGenreDatalist();
+    tbrState.entries = loadTbrLocal() || [];
+    updateTbrBadge();
+    render();
+  }
+
+  /* ---------------- rendering ---------------- */
+  function buildSpine(book){
+    var el = document.createElement("button");
+    el.className = "spine";
+    el.type = "button";
+    el.style.background = genreColor(primaryGenre(book));
+    // on mobile, leave width unset so the CSS flex rule fills the row
+    // (guarantees 8-across with no overflow); on desktop use the fixed
+    // pixel spine that gives the shelf its intentional small, centered size.
+    if(!isMobileShelf()) el.style.width = spineWidth() + "px";
+    var label = book.title + " by " + (book.author || "unknown author");
+    if(hasSeries(book)) label += ", No. " + book.seriesNo;
+    if(book.genres && book.genres.length) label += " — " + book.genres.join(", ");
+    el.setAttribute("aria-label", label);
+    el.dataset.id = book.id;
+    var ribbon = document.createElement("span");
+    if(hasSeries(book)){
+      ribbon.className = "ribbon ribbon-num";
+      ribbon.textContent = book.seriesNo;
+    } else {
+      ribbon.className = "ribbon";
+      ribbon.style.background = "var(--gold)";
+    }
+    var titleSpan = document.createElement("span");
+    titleSpan.className = "title";
+    titleSpan.textContent = book.title || "(untitled)";
+    el.appendChild(ribbon);
+    el.appendChild(titleSpan);
+    el.addEventListener("click", function(){ openDetail(book.id); });
+    return el;
+  }
+  /* Sort order for the single continuous shelf. Author sort mimics
+     typical library shelving: same author together, then in series
+     order (the "No." field) the way a real library shelves a series. */
+  function compareBooks(a, b){
+    if(sortMode === "alpha"){
+      return (a.title||"").localeCompare(b.title||"");
+    }
+    if(sortMode === "genre"){
+      var ga = primaryGenre(a) || "\uFFFF";
+      var gb = primaryGenre(b) || "\uFFFF";
+      var gc = ga.localeCompare(gb);
+      if(gc !== 0) return gc;
+      return (a.title||"").localeCompare(b.title||"");
+    }
+    if(sortMode === "author"){
+      var aa = (a.author && a.author.trim()) || "\uFFFF";
+      var ab = (b.author && b.author.trim()) || "\uFFFF";
+      var ac = aa.localeCompare(ab);
+      if(ac !== 0) return ac;
+      var an = hasSeries(a) ? Number(a.seriesNo) : Infinity;
+      var bn = hasSeries(b) ? Number(b.seriesNo) : Infinity;
+      if(an !== bn) return an - bn;
+      return (a.title||"").localeCompare(b.title||"");
+    }
+    // date: most recently added first
+    var da = Date.parse(a.dateAdded) || 0;
+    var dbb = Date.parse(b.dateAdded) || 0;
+    if(dbb !== da) return dbb - da;
+    return (b.addedAt||0) - (a.addedAt||0);
+  }
+  function emptyState(kind, query){
+    var d = document.createElement("div");
+    d.className = "empty-shelf";
+    if(kind === "no-match"){
+      d.innerHTML = '<span class="bigicon">🔍</span>' +
+        '<p>No books match &ldquo;' + escapeHtml(query) + '&rdquo;.</p>' +
+        '<p class="sub">Try a different title, author, or genre.</p>';
+    } else {
+      d.innerHTML = '<span class="bigicon">🏚️</span>' +
+        '<p>Your shelf is bare!</p>' +
+        '<p class="sub">Press the + button to add your first book.</p>';
+    }
+    return d;
+  }
+
+  /* A bookshelf unit always shows its full physical structure: exactly
+     ROWS_PER_UNIT shelves, each holding up to BOOKS_PER_ROW books —
+     empty rows within the current unit are shown bare, just like a
+     real bookshelf that isn't full yet. */
+  function renderShelfPage(pageBooks){
+    var frag = document.createDocumentFragment();
+    for(var r = 0; r < ROWS_PER_UNIT; r++){
+      var rowBooks = pageBooks.slice(r * BOOKS_PER_ROW, (r + 1) * BOOKS_PER_ROW);
+      var row = document.createElement("div");
+      row.className = "shelf-row";
+      rowBooks.forEach(function(b){ row.appendChild(buildSpine(b)); });
+      frag.appendChild(row);
+    }
+    return frag;
+  }
+
+  function matchesSearch(b){
+    if(!searchQuery) return true;
+    var genresText = (b.genres || []).join(" ").toLowerCase();
+    return (b.title||"").toLowerCase().indexOf(searchQuery) > -1 ||
+           (b.author||"").toLowerCase().indexOf(searchQuery) > -1 ||
+           genresText.indexOf(searchQuery) > -1;
+  }
+
+  function render(){
+    syncGenresFromBooks();
+    var count = books.length;
+    var visible = books.filter(matchesSearch);
+
+    statBadge.textContent = searchQuery
+      ? "📚 " + visible.length + " of " + count + (count === 1 ? " book" : " books")
+      : "📚 " + count + (count === 1 ? " book" : " books");
+
+    // sorted order, chunked into fixed-capacity bookshelf units (3
+    // shelves x 8 books = 24 books per unit).
+    var sorted = visible.slice().sort(compareBooks);
+    var totalUnits = Math.max(1, Math.ceil(sorted.length / UNIT_CAPACITY));
+    if(currentShelfPage > totalUnits - 1) currentShelfPage = totalUnits - 1;
+    if(currentShelfPage < 0) currentShelfPage = 0;
+
+    if(count === 0){
+      shelfBooks.innerHTML = "";
+      shelfBooks.appendChild(emptyState("bare"));
+      pageLeft.hidden = true; pageRight.hidden = true;
+      shelfPageLabel.hidden = true;
+      return;
+    }
+    if(visible.length === 0){
+      shelfBooks.innerHTML = "";
+      shelfBooks.appendChild(emptyState("no-match", searchInput.value.trim()));
+      pageLeft.hidden = true; pageRight.hidden = true;
+      shelfPageLabel.hidden = true;
+      return;
+    }
+
+    var pageBooks = sorted.slice(currentShelfPage * UNIT_CAPACITY, currentShelfPage * UNIT_CAPACITY + UNIT_CAPACITY);
+    shelfBooks.innerHTML = "";
+    shelfBooks.appendChild(renderShelfPage(pageBooks));
+
+    pageLeft.hidden = currentShelfPage <= 0;
+    pageRight.hidden = currentShelfPage >= totalUnits - 1;
+    if(totalUnits > 1){
+      shelfPageLabel.hidden = false;
+      shelfPageLabel.textContent = "Bookshelf " + (currentShelfPage + 1) + " of " + totalUnits;
+    } else {
+      shelfPageLabel.hidden = true;
+    }
+  }
+
+  /* ---------------- search ---------------- */
+  searchInput.addEventListener("input", function(){
+    searchQuery = searchInput.value.trim().toLowerCase();
+    currentShelfPage = 0;
+    render();
+  });
+
+  /* ---------------- pagination ---------------- */
+  pageLeft.addEventListener("click", function(){
+    if(currentShelfPage > 0){ currentShelfPage--; render(); }
+  });
+  pageRight.addEventListener("click", function(){
+    currentShelfPage++; render();
+  });
+
+  // spine width shifts at the small-screen breakpoint — rebuild if the
+  // window crosses it so a full shelf keeps fitting exactly 8 books.
+  window.addEventListener("resize", debounce(render, 150));
+
+  /* ---------------- index / genre-manager popup ---------------- */
+  var popupBackdrop = document.getElementById("popupBackdrop");
+  var popupBody = document.getElementById("popupBody");
+  var poppedTabEl = null;
+
+  function openPopup(tabEl, renderFn){
+    if(poppedTabEl && poppedTabEl !== tabEl){ poppedTabEl.classList.remove("popped"); }
+    poppedTabEl = tabEl;
+    tabEl.classList.add("popped");
+    renderFn();
+    popupBackdrop.hidden = false;
+  }
+  function closePopup(){
+    popupBackdrop.hidden = true;
+    if(poppedTabEl){ poppedTabEl.classList.remove("popped"); poppedTabEl = null; }
+    tbrPopupRefresh = null;
+  }
+  document.getElementById("popupClose").addEventListener("click", closePopup);
+  popupBackdrop.addEventListener("click", function(e){ if(e.target === popupBackdrop) closePopup(); });
+
+  function uniqueSorted(list){
+    var seen = {};
+    var out = [];
+    list.forEach(function(v){
+      var t = (v||"").trim();
+      var key = t.toLowerCase();
+      if(t && !seen[key]){ seen[key] = true; out.push(t); }
+    });
+    out.sort(function(a,b){ return a.localeCompare(b); });
+    return out;
+  }
+  function wireIndexRowsByValue(handler){
+    popupBody.querySelectorAll(".index-row[data-val]").forEach(function(el){
+      el.addEventListener("click", function(){ handler(el.dataset.val); });
+    });
+  }
+  function wireIndexRowsById(handler){
+    popupBody.querySelectorAll(".index-row[data-id]").forEach(function(el){
+      el.addEventListener("click", function(){ handler(el.dataset.id); });
+    });
+  }
+  function jumpToFilter(val){
+    searchInput.value = val;
+    searchQuery = val.trim().toLowerCase();
+    render();
+    closePopup();
+  }
+  function jumpToBook(id){
+    closePopup();
+    openDetail(id);
+  }
+  function popupFooter(label){
+    return '<div class="modal-actions"><button type="button" class="btn btn-ghost" id="popupCloseBtn2">' + (label||"Close") + '</button></div>';
+  }
+  function wirePopupFooter(){
+    document.getElementById("popupCloseBtn2").addEventListener("click", closePopup);
+  }
+
+  function renderAuthorIndex(){
+    var authors = uniqueSorted(books.map(function(b){ return b.author; }));
+    popupBody.innerHTML = '<h2>Your Authors</h2><div class="modal-sub">tap one to find their books</div>' +
+      '<div class="index-list">' + (authors.length ? authors.map(function(a){
+        return '<button type="button" class="index-row" data-val="' + escapeHtml(a) + '">' + escapeHtml(a) + '</button>';
+      }).join('') : '<div class="modal-sub">no authors on your shelf yet</div>') + '</div>' +
+      popupFooter();
+    wireIndexRowsByValue(jumpToFilter);
+    wirePopupFooter();
+  }
+  /* "Your Genres" and "Edit Genres" must always show the exact same
+     set — both render straight from genreState.entries (kept complete
+     by syncGenresFromBooks), sorted the same way, so there is nothing
+     for the two views to disagree about. */
+  /* "Your Genres" is now the one screen for browsing, recoloring and
+     adding genres — there's no separate "Edit Genres" screen anymore.
+     Tapping a name jumps to that genre's books; tapping the little
+     color square next to a name expands a palette to recolor it in
+     place; the + in the corner expands a small form to add a new one. */
+  function renderGenreIndex(){
+    var lastFilter = "";
+    var openRecolor = null;   // name of the genre whose palette is expanded
+    var addOpen = false;      // whether the "add a genre" panel is expanded
+    var draftColor = null;    // color picked while drafting a new genre
+
+    function draw(){
+      var f = lastFilter.trim().toLowerCase();
+      var entries = genreState.entries.slice().sort(function(a,b){ return a.name.localeCompare(b.name); });
+      var filtered = f ? entries.filter(function(e){ return e.name.toLowerCase().indexOf(f) > -1; }) : entries;
+      var listEl = document.getElementById("genreIndexList");
+
+      listEl.innerHTML = filtered.length ? filtered.map(function(e){
+        var colorVar = PALETTE_VAR[e.color] || "--wood";
+        var expanded = openRecolor === e.name;
+        return '<div class="genre-idx-item">' +
+          '<div class="genre-idx-row">' +
+            '<button type="button" class="genre-idx-swatch" data-genre="' + escapeHtml(e.name) + '" style="background:var(' + colorVar + ')" aria-label="Change color for ' + escapeHtml(e.name) + '"></button>' +
+            '<button type="button" class="genre-idx-name" data-val="' + escapeHtml(e.name) + '">' + escapeHtml(e.name) + '</button>' +
+            '<button type="button" class="genre-idx-del" data-genre="' + escapeHtml(e.name) + '" aria-label="Delete ' + escapeHtml(e.name) + '">&times;</button>' +
+          '</div>' +
+          (expanded ? '<div class="genre-idx-recolor swatch-row">' + swatchRowHTML(e.name, e.color) + '</div>' : '') +
+        '</div>';
+      }).join('') : '<div class="modal-sub">' + (f ? 'no genres match &ldquo;' + escapeHtml(lastFilter.trim()) + '&rdquo;' : 'no genres yet &mdash; add one below') + '</div>';
+
+      listEl.querySelectorAll(".genre-idx-swatch").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          openRecolor = (openRecolor === btn.dataset.genre) ? null : btn.dataset.genre;
+          draw();
+        });
+      });
+      listEl.querySelectorAll(".genre-idx-recolor .swatch-btn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var targetName = btn.dataset.genre;
+          var targetColor = btn.dataset.color;
+          if(findGenreEntry(targetName)){
+            genreState.entries = genreState.entries.map(function(e){
+              return (e.name === targetName) ? { name: e.name, color: targetColor } : e;
+            });
+            saveGenreState();
+            openRecolor = null;
+            render();
+            draw();
+          }
+        });
+      });
+      listEl.querySelectorAll(".genre-idx-name").forEach(function(btn){
+        btn.addEventListener("click", function(){ jumpToFilter(btn.dataset.val); });
+      });
+      listEl.querySelectorAll(".genre-idx-del").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var deletedKey = btn.dataset.genre.trim().toLowerCase();
+          genreState.entries = genreState.entries.filter(function(e){ return e.name !== btn.dataset.genre; });
+          saveGenreState();
+          rebuildGenreDatalist();
+          if(openRecolor === btn.dataset.genre) openRecolor = null;
+          // un-tag any books that had this genre — they stay on the
+          // shelf, just without that tag (or plain, if it was their
+          // only one), never deleted.
+          books.forEach(function(b){
+            if(!b.genres || !b.genres.length) return;
+            var hasIt = b.genres.some(function(g){ return g.trim().toLowerCase() === deletedKey; });
+            if(!hasIt) return;
+            var remaining = b.genres.filter(function(g){ return g.trim().toLowerCase() !== deletedKey; });
+            updateBook(b.id, { genres: remaining });
+          });
+          render();
+          draw();
+        });
+      });
+    }
+
+    function drawAddPanel(){
+      var panel = document.getElementById("genreAddPanel");
+      var fab = document.getElementById("genreFabAdd");
+      panel.hidden = !addOpen;
+      fab.classList.toggle("open", addOpen);
+      fab.innerHTML = addOpen ? "&times;" : "+";
+      fab.setAttribute("aria-label", addOpen ? "Cancel adding a genre" : "Add a genre");
+      if(!addOpen){ panel.innerHTML = ""; return; }
+
+      if(!draftColor) draftColor = PALETTE_KEYS[genreState.entries.length % PALETTE_KEYS.length];
+      panel.innerHTML =
+        '<div class="field">' +
+          '<label for="genreAddInput">Genre Name</label>' +
+          '<input type="text" id="genreAddInput" maxlength="40" placeholder="e.g. Poetry" autocomplete="off">' +
+        '</div>' +
+        '<div class="swatch-row" id="genreAddSwatches">' + swatchRowHTML(null, draftColor) + '</div>' +
+        '<div class="field-error" id="genreAddErr"></div>' +
+        '<button type="button" class="btn btn-primary" id="genreAddConfirm" style="width:100%; margin-top:10px;">Add Genre</button>';
+
+      document.getElementById("genreAddSwatches").querySelectorAll(".swatch-btn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          draftColor = btn.dataset.color;
+          document.getElementById("genreAddSwatches").querySelectorAll(".swatch-btn").forEach(function(b){
+            b.classList.toggle("active", b.dataset.color === draftColor);
+          });
+        });
+      });
+      var nameInput = document.getElementById("genreAddInput");
+      document.getElementById("genreAddConfirm").addEventListener("click", function(){
+        var errEl = document.getElementById("genreAddErr");
+        var name = nameInput.value.trim();
+        if(!name){ errEl.textContent = "type a genre name first"; nameInput.focus(); return; }
+        var existing = findGenreEntry(name);
+        if(existing){
+          errEl.textContent = '"' + existing.name + '" is already on your shelf &mdash; pick a color for it in the list above.';
+          lastFilter = "";
+          document.getElementById("genreIndexSearch").value = "";
+          openRecolor = existing.name;
+          draw();
+          var row = document.querySelector('.genre-idx-swatch[data-genre="' + existing.name.replace(/"/g, '\\"') + '"]');
+          var item = row ? row.closest(".genre-idx-item") : null;
+          if(item){
+            item.scrollIntoView({block: "center", behavior: "smooth"});
+            item.classList.add("flash");
+            setTimeout(function(){ item.classList.remove("flash"); }, 900);
+          }
+          return;
+        }
+        errEl.textContent = "";
+        ensureGenreRegistered(name, draftColor);
+        draftColor = null;
+        addOpen = false;
+        render();
+        draw();
+        drawAddPanel();
+      });
+      nameInput.focus();
+    }
+
+    popupBody.innerHTML = '<h2>Your Genres</h2><div class="modal-sub">add, delete, and recolor genres</div>' +
+      '<input type="text" class="popup-search" id="genreIndexSearch" placeholder="Search your genres&hellip;" autocomplete="off">' +
+      '<div class="index-list" id="genreIndexList"></div>' +
+      '<div class="genre-add-panel" id="genreAddPanel" hidden></div>' +
+      '<div class="genre-add-row"><button type="button" class="genre-fab-add" id="genreFabAdd" aria-label="Add a genre">+</button></div>' +
+      '<div class="modal-actions"><button type="button" class="btn btn-ghost" id="genreIndexCloseBtn">Close</button></div>';
+
+    draw();
+    document.getElementById("genreIndexSearch").addEventListener("input", function(e){ lastFilter = e.target.value; draw(); });
+    document.getElementById("genreIndexCloseBtn").addEventListener("click", closePopup);
+    document.getElementById("genreFabAdd").addEventListener("click", function(){
+      addOpen = !addOpen;
+      if(!addOpen) draftColor = null;
+      drawAddPanel();
+    });
+  }
+  function renderAlphaIndex(){
+    var sorted = books.slice().sort(function(a,b){ return (a.title||"").localeCompare(b.title||""); });
+    popupBody.innerHTML = '<h2>All Books, A&ndash;Z</h2><div class="modal-sub">tap a title to open it</div>' +
+      '<div class="index-list">' + (sorted.length ? sorted.map(function(b){
+        return '<button type="button" class="index-row" data-id="' + b.id + '">' + escapeHtml(b.title || "(untitled)") + '</button>';
+      }).join('') : '<div class="modal-sub">your shelf is empty</div>') + '</div>' +
+      popupFooter();
+    wireIndexRowsById(jumpToBook);
+    wirePopupFooter();
+  }
+  function renderRecentIndex(){
+    var sorted = books.slice().sort(function(a,b){
+      var da = Date.parse(a.dateAdded) || 0, dbb = Date.parse(b.dateAdded) || 0;
+      if(dbb !== da) return dbb - da;
+      return (b.addedAt||0) - (a.addedAt||0);
+    }).slice(0, 5);
+    popupBody.innerHTML = '<h2>Recently Added</h2><div class="modal-sub">your last 5 additions</div>' +
+      '<div class="index-list">' + (sorted.length ? sorted.map(function(b){
+        return '<button type="button" class="index-row" data-id="' + b.id + '">' + escapeHtml(b.title || "(untitled)") +
+          ' <span class="index-meta">(' + escapeHtml(formatDate(b.dateAdded)) + ')</span></button>';
+      }).join('') : '<div class="modal-sub">nothing added yet</div>') + '</div>' +
+      popupFooter();
+    wireIndexRowsById(jumpToBook);
+    wirePopupFooter();
+  }
+
+  function renderTbrPopup(){
+    function rows(){
+      var sorted = tbrState.entries.slice().sort(function(a,b){
+        return tbrAddPosition === "top" ? (b.addedAt||0) - (a.addedAt||0) : (a.addedAt||0) - (b.addedAt||0);
+      });
+      var listEl = document.getElementById("tbrListBody");
+      if(!listEl) return; // popup may have been closed already
+      listEl.innerHTML = sorted.length ? sorted.map(function(e){
+        return '<div class="tbr-row">' +
+          '<div class="tbr-row-info">' +
+            '<span class="tbr-row-title">' + escapeHtml(e.title) + '</span>' +
+            (e.author ? '<span class="tbr-row-author">by ' + escapeHtml(e.author) + '</span>' : '') +
+          '</div>' +
+          '<div class="tbr-row-actions">' +
+            '<button type="button" class="btn btn-primary btn-small tbr-read-btn" data-id="' + e.id + '" title="Mark as read and add to your shelf">Add to Shelf</button>' +
+            '<button type="button" class="tbr-remove-btn" data-id="' + e.id + '" aria-label="Remove ' + escapeHtml(e.title) + ' from your TBR">&times;</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') : '<div class="modal-sub">your TBR is empty &mdash; add a title above to start your queue</div>';
+
+      listEl.querySelectorAll(".tbr-read-btn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var entry = tbrState.entries.find(function(e){ return e.id === btn.dataset.id; });
+          if(!entry) return;
+          closePopup();
+          openAdd({title: entry.title, author: entry.author, tbrId: entry.id});
+        });
+      });
+      listEl.querySelectorAll(".tbr-remove-btn").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          removeTbrEntry(btn.dataset.id);
+          updateTbrBadge();
+          rows();
+        });
+      });
+    }
+
+    function drawOrderToggle(){
+      var wrap = document.getElementById("tbrOrderToggle");
+      if(!wrap) return;
+      wrap.setAttribute("data-pos", tbrAddPosition);
+      wrap.querySelectorAll(".tbr-order-opt").forEach(function(b){
+        b.classList.toggle("active", b.dataset.pos === tbrAddPosition);
+      });
+    }
+
+    popupBody.innerHTML =
+      '<h2>To Be Read</h2>' +
+      '<div class="modal-sub">books you want to read next</div>' +
+      '<div class="field">' +
+        '<label for="tbrTitleInput">Title</label>' +
+        '<input type="text" id="tbrTitleInput" maxlength="120" placeholder="e.g. The Left Hand of Darkness" autocomplete="off">' +
+      '</div>' +
+      '<div class="field">' +
+        '<label for="tbrAuthorInput">Author <span style="text-transform:none;">(optional)</span></label>' +
+        '<input type="text" id="tbrAuthorInput" maxlength="90" autocomplete="off">' +
+        '<div class="field-error" id="tbrAddErr"></div>' +
+        '<button type="button" class="btn btn-primary" id="tbrAddSubmit" style="width:100%; margin-top:10px;">+ Add to TBR</button>' +
+      '</div>' +
+      '<div class="tbr-order-toggle" id="tbrOrderToggle">' +
+        '<button type="button" class="tbr-order-opt" data-pos="bottom">Add to Bottom</button>' +
+        '<button type="button" class="tbr-order-opt" data-pos="top">Add to Top</button>' +
+        '<span class="tbr-order-thumb" aria-hidden="true"></span>' +
+      '</div>' +
+      '<div class="tbr-list" id="tbrListBody"></div>' +
+      popupFooter("Close");
+
+    rows();
+    drawOrderToggle();
+    wirePopupFooter();
+
+    document.getElementById("tbrOrderToggle").querySelectorAll(".tbr-order-opt").forEach(function(b){
+      b.addEventListener("click", function(){
+        tbrAddPosition = b.dataset.pos;
+        saveTbrOrderPref(tbrAddPosition);
+        drawOrderToggle();
+        rows();
+      });
+    });
+
+    var titleEl = document.getElementById("tbrTitleInput");
+    var authorEl = document.getElementById("tbrAuthorInput");
+    document.getElementById("tbrAddSubmit").addEventListener("click", function(){
+      var errEl = document.getElementById("tbrAddErr");
+      var title = titleEl.value.trim();
+      var author = authorEl.value.trim();
+      if(!title){
+        errEl.textContent = "type a title first";
+        titleEl.focus();
+        return;
+      }
+      errEl.textContent = "";
+      addTbrEntry(title, author);
+      updateTbrBadge();
+      titleEl.value = "";
+      authorEl.value = "";
+      rows();
+      titleEl.focus();
+    });
+    titleEl.focus();
+
+    // let the db subscription refresh this exact list the moment a
+    // write is confirmed, so an add/remove shows up immediately
+    // instead of only after closing and reopening the popup
+    tbrPopupRefresh = rows;
+  }
+  document.getElementById("tbrStackBtn").addEventListener("click", function(){
+    openPopup(document.getElementById("tbrStackBtn"), renderTbrPopup);
+  });
+
+  /* ---------------- sort tabs ---------------- */
+  document.querySelectorAll(".tab[data-sort]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var already = btn.dataset.sort === sortMode;
+      if(already){
+        if(btn.dataset.sort === "genre"){
+          openPopup(btn, renderGenreIndex);
+        } else if(btn.dataset.sort === "author"){
+          openPopup(btn, renderAuthorIndex);
+        } else if(btn.dataset.sort === "alpha"){
+          openPopup(btn, renderAlphaIndex);
+        } else if(btn.dataset.sort === "date"){
+          openPopup(btn, renderRecentIndex);
+        }
+        return;
+      }
+      sortMode = btn.dataset.sort;
+      currentShelfPage = 0;
+      document.querySelectorAll(".tab[data-sort]").forEach(function(b){
+        b.setAttribute("aria-pressed", String(b === btn));
+      });
+      render();
+    });
+  });
+
+  /* ---------------- series toggle (shared by add + edit forms) ---------------- */
+  function seriesPromptHTML(idPrefix){
+    return '<div class="field" id="' + idPrefix + 'Prompt">' +
+      '<button type="button" class="series-toggle-btn" id="' + idPrefix + 'ToggleBtn">+ Is this part of a series?</button>' +
+    '</div>';
+  }
+  function seriesFieldsHTML(idPrefix, name, no){
+    var noVal = (no !== "" && no !== null && no !== undefined) ? escapeHtml(no) : "";
+    return '<div class="field" id="' + idPrefix + 'Fields">' +
+      '<label for="' + idPrefix + 'Name">Series</label>' +
+      '<div class="title-row">' +
+        '<input type="text" id="' + idPrefix + 'Name" maxlength="80" placeholder="Series name" autocomplete="off" value="' + escapeHtml(name||"") + '">' +
+        '<div class="series-no"><input type="number" id="' + idPrefix + 'No" min="0" max="999" placeholder="No." aria-label="Number in series" value="' + noVal + '"></div>' +
+      '</div>' +
+      '<button type="button" class="hint-link" id="' + idPrefix + 'RemoveBtn">not part of a series</button>' +
+    '</div>';
+  }
+  function wireSeriesWrap(idPrefix, wrapEl, name, no){
+    function showExpanded(n, num){
+      wrapEl.innerHTML = seriesFieldsHTML(idPrefix, n, num);
+      var nameInput = document.getElementById(idPrefix + "Name");
+      if(nameInput) nameInput.focus();
+      document.getElementById(idPrefix + "RemoveBtn").addEventListener("click", function(){ showCollapsed(); });
+    }
+    function showCollapsed(){
+      wrapEl.innerHTML = seriesPromptHTML(idPrefix);
+      document.getElementById(idPrefix + "ToggleBtn").addEventListener("click", function(){ showExpanded("", ""); });
+    }
+    if((name && name.trim()) || (no !== "" && no !== null && no !== undefined)){
+      showExpanded(name, no);
+    } else {
+      showCollapsed();
+    }
+  }
+  function readSeriesValues(idPrefix){
+    var nameEl = document.getElementById(idPrefix + "Name");
+    var noEl = document.getElementById(idPrefix + "No");
+    var name = nameEl ? nameEl.value.trim() : "";
+    var noRaw = noEl ? noEl.value.trim() : "";
+    return { seriesName: name, seriesNo: noRaw === "" ? "" : Number(noRaw) };
+  }
+
+  /* ---------------- multi-genre chip input (shared by add + edit forms) ---------------- */
+  function genreChipHTML(name){
+    return '<span class="genre-chip">' + escapeHtml(name) +
+      '<button type="button" class="genre-chip-remove" data-name="' + escapeHtml(name) + '" aria-label="Remove ' + escapeHtml(name) + '">&times;</button></span>';
+  }
+  /* Wires a chips container + text input pair (ids "<idPrefix>Chips" and
+     "<idPrefix>Input") into a little tag editor: type a genre, press
+     Enter or comma (or just blur the field) to turn it into a chip;
+     click a chip's x to remove it. Returns { getGenres() } so the
+     caller can read the final list at submit time, including any text
+     still sitting uncommitted in the input. */
+  function wireGenreChips(idPrefix, initialGenres){
+    var chipsEl = document.getElementById(idPrefix + "Chips");
+    var inputEl = document.getElementById(idPrefix + "Input");
+    var state = (initialGenres || []).slice();
+
+    function renderChips(){
+      chipsEl.innerHTML = state.map(genreChipHTML).join('');
+      chipsEl.querySelectorAll(".genre-chip-remove").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          var nm = btn.dataset.name.toLowerCase();
+          state = state.filter(function(g){ return g.toLowerCase() !== nm; });
+          renderChips();
+        });
+      });
+    }
+    function commitCurrentText(){
+      var v = inputEl.value.trim();
+      if(!v) return;
+      var exists = state.some(function(g){ return g.toLowerCase() === v.toLowerCase(); });
+      if(!exists) state.push(v);
+      inputEl.value = "";
+      renderChips();
+    }
+    inputEl.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === ","){
+        e.preventDefault();
+        commitCurrentText();
+      } else if(e.key === "Backspace" && inputEl.value === "" && state.length){
+        state.pop();
+        renderChips();
+      }
+    });
+    inputEl.addEventListener("blur", commitCurrentText);
+    renderChips();
+
+    return {
+      getGenres: function(){
+        var out = state.slice();
+        var v = inputEl.value.trim();
+        if(v && !out.some(function(g){ return g.toLowerCase() === v.toLowerCase(); })){
+          out.push(v);
+        }
+        return out;
+      }
+    };
+  }
+
+  /* ---------------- rating + notes toggle (shared by add + edit forms) ---------------- */
+  function hasRating(b){ return b.rating !== null && b.rating !== undefined && b.rating !== "" && b.rating > 0; }
+  function hasNotes(b){ return hasRating(b) || (b.notes && b.notes.trim()); }
+  function ratingLabel(rating){
+    return rating > 0 ? (rating % 1 === 0 ? rating : rating.toFixed(1)) + " / 5" : "Not rated yet";
+  }
+  /* Builds the star row + click layer. `readonly` renders the same
+     markup without the invisible click buttons, for the detail view. */
+  function starRatingHTML(idPrefix, rating, readonly){
+    var pct = (Math.max(0, Math.min(5, rating || 0)) / 5) * 100;
+    var slots = "";
+    if(!readonly){
+      for(var i = 1; i <= 10; i++){
+        var val = i / 2;
+        slots += '<button type="button" data-val="' + val + '" aria-label="Rate ' + val + ' out of 5 stars"></button>';
+      }
+    }
+    return '<div class="star-rating' + (readonly ? " readonly" : "") + '" id="' + idPrefix + 'Stars" data-rating="' + (rating || 0) + '">' +
+      '<div class="star-row star-row-back">★★★★★</div>' +
+      '<div class="star-row star-row-front" id="' + idPrefix + 'StarsFront" style="width:' + pct + '%">★★★★★</div>' +
+      (readonly ? '' : '<div class="star-click-layer">' + slots + '</div>') +
+      '</div>' +
+      '<span class="star-value" id="' + idPrefix + 'StarsLabel">' + ratingLabel(rating || 0) + '</span>';
+  }
+  function notesPromptHTML(idPrefix){
+    return '<div class="field" id="' + idPrefix + 'Prompt">' +
+      '<button type="button" class="series-toggle-btn" id="' + idPrefix + 'ToggleBtn">+ Notes</button>' +
+    '</div>';
+  }
+  function notesFieldsHTML(idPrefix, rating, notes){
+    return '<div class="field" id="' + idPrefix + 'Fields">' +
+      '<label>Your Rating</label>' +
+      starRatingHTML(idPrefix, rating, false) +
+      '<label for="' + idPrefix + 'Text" style="margin-top:12px;">Notes</label>' +
+      '<textarea id="' + idPrefix + 'Text" maxlength="1000" placeholder="thoughts, quotes, anything you want to remember&hellip;">' + escapeHtml(notes || "") + '</textarea>' +
+      '<button type="button" class="hint-link" id="' + idPrefix + 'RemoveBtn">remove notes</button>' +
+    '</div>';
+  }
+  function wireStarRating(idPrefix){
+    var container = document.getElementById(idPrefix + "Stars");
+    var front = document.getElementById(idPrefix + "StarsFront");
+    var label = document.getElementById(idPrefix + "StarsLabel");
+    if(!container) return;
+    container.querySelectorAll(".star-click-layer button").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var val = parseFloat(btn.dataset.val);
+        var current = parseFloat(container.dataset.rating) || 0;
+        // clicking the same value again clears the rating
+        val = (current === val) ? 0 : val;
+        container.dataset.rating = String(val);
+        front.style.width = ((val / 5) * 100) + "%";
+        label.textContent = ratingLabel(val);
+      });
+    });
+  }
+  function wireNotesWrap(idPrefix, wrapEl, rating, notes){
+    function showExpanded(r, n){
+      wrapEl.innerHTML = notesFieldsHTML(idPrefix, r, n);
+      wireStarRating(idPrefix);
+      document.getElementById(idPrefix + "RemoveBtn").addEventListener("click", function(){ showCollapsed(); });
+    }
+    function showCollapsed(){
+      wrapEl.innerHTML = notesPromptHTML(idPrefix);
+      document.getElementById(idPrefix + "ToggleBtn").addEventListener("click", function(){ showExpanded(0, ""); });
+    }
+    if(hasRating({rating: rating}) || (notes && notes.trim())){
+      showExpanded(rating, notes);
+    } else {
+      showCollapsed();
+    }
+  }
+  function readNotesValues(idPrefix){
+    var container = document.getElementById(idPrefix + "Stars");
+    var textEl = document.getElementById(idPrefix + "Text");
+    var rating = container ? (parseFloat(container.dataset.rating) || 0) : 0;
+    var notes = textEl ? textEl.value.trim() : "";
+    return { rating: rating > 0 ? rating : "", notes: notes };
+  }
+
+  /* ---------------- add modal ---------------- */
+  var addBackdrop = document.getElementById("addBackdrop");
+  var addForm = document.getElementById("addForm");
+  var fTitle = document.getElementById("fTitle");
+  var addSeriesWrap = document.getElementById("addSeriesWrap");
+  var addNotesWrap = document.getElementById("addNotesWrap");
+  var fAuthor = document.getElementById("fAuthor");
+  var fDate = document.getElementById("fDate");
+  var addGenreChips = null;
+  var pendingTbrPromoteId = null;
+
+  function openAdd(prefill){
+    addForm.reset();
+    document.getElementById("errTitle").textContent = "";
+    document.getElementById("errAuthor").textContent = "";
+    fDate.value = todayISO();
+    wireSeriesWrap("fSeries", addSeriesWrap, "", "");
+    addGenreChips = wireGenreChips("fGenre", []);
+    wireNotesWrap("fNotes", addNotesWrap, 0, "");
+    pendingTbrPromoteId = (prefill && prefill.tbrId) || null;
+    if(prefill && prefill.title) fTitle.value = prefill.title;
+    if(prefill && prefill.author) fAuthor.value = prefill.author;
+    addBackdrop.hidden = false;
+    if(prefill && prefill.title){ fAuthor.focus(); } else { fTitle.focus(); }
+  }
+  function closeAdd(){ addBackdrop.hidden = true; pendingTbrPromoteId = null; }
+
+  document.getElementById("fabAdd").addEventListener("click", openAdd);
+  document.getElementById("addCancel").addEventListener("click", closeAdd);
+  document.getElementById("addClose").addEventListener("click", closeAdd);
+  addBackdrop.addEventListener("click", function(e){ if(e.target === addBackdrop) closeAdd(); });
+
+  addForm.addEventListener("submit", function(e){
+    e.preventDefault();
+    var title = fTitle.value.trim();
+    var author = fAuthor.value.trim();
+    var genres = addGenreChips ? addGenreChips.getGenres() : [];
+    var ok = true;
+    if(!title){ document.getElementById("errTitle").textContent = "please enter a title"; ok = false; }
+    else { document.getElementById("errTitle").textContent = ""; }
+    if(!author){ document.getElementById("errAuthor").textContent = "please enter an author"; ok = false; }
+    else { document.getElementById("errAuthor").textContent = ""; }
+    if(!ok) return;
+
+    var series = readSeriesValues("fSeries");
+    var notes = readNotesValues("fNotes");
+    genres.forEach(function(g){ ensureGenreRegistered(g); });
+    addBook({
+      title: title,
+      author: author,
+      genres: genres,
+      seriesName: series.seriesName,
+      seriesNo: series.seriesNo,
+      dateAdded: fDate.value || todayISO(),
+      addedAt: Date.now(),
+      rating: notes.rating,
+      notes: notes.notes
+    });
+    if(pendingTbrPromoteId){
+      removeTbrEntry(pendingTbrPromoteId);
+      updateTbrBadge();
+      pendingTbrPromoteId = null;
+    }
+    addBackdrop.hidden = true;
+  });
+
+  /* ---------------- detail modal (view + edit) ---------------- */
+  var detailBackdrop = document.getElementById("detailBackdrop");
+  var detailBody = document.getElementById("detailBody");
+  var pendingDeleteId = null;
+
+  function openDetail(id){
+    var book = books.find(function(b){ return b.id === id; });
+    if(!book) return;
+    pendingDeleteId = id;
+    renderDetailView(book);
+    detailBackdrop.hidden = false;
+  }
+
+  function renderDetailView(book){
+    var seriesBits = [];
+    if(book.seriesName && book.seriesName.trim()) seriesBits.push(escapeHtml(book.seriesName));
+    if(hasSeries(book)) seriesBits.push("No. " + escapeHtml(book.seriesNo));
+    detailBody.innerHTML =
+      '<div class="detail-title">' + escapeHtml(book.title || "(untitled)") + '</div>' +
+      '<div class="modal-sub">by ' + escapeHtml(book.author || "unknown") + '</div>' +
+      (book.genres && book.genres.length ? '<div class="detail-row">' + book.genres.map(function(g){
+        return '<span class="genre-tag">' + escapeHtml(g) + '</span>';
+      }).join('') + '</div>' : '') +
+      (seriesBits.length ? '<div class="detail-row"><div class="k">Series</div><div class="v">' + seriesBits.join(", ") + '</div></div>' : '') +
+      '<div class="detail-row"><div class="k">Added</div><div class="v">' + escapeHtml(formatDate(book.dateAdded)) + '</div></div>' +
+      (hasRating(book) ? '<div class="detail-row"><div class="k">Your Rating</div><div class="v">' + starRatingHTML("view", book.rating, true) + '</div></div>' : '') +
+      (book.notes && book.notes.trim() ? '<div class="detail-row"><div class="k">Notes</div><div class="v" style="white-space:pre-wrap;">' + escapeHtml(book.notes) + '</div></div>' : '') +
+      '<div class="modal-actions">' +
+        '<button type="button" class="btn btn-ghost" id="detailCancelBtn">Close</button>' +
+        '<button type="button" class="btn btn-primary" id="detailEditBtn">Edit</button>' +
+        '<button type="button" class="btn btn-danger" id="detailDeleteBtn">Remove</button>' +
+      '</div>';
+    document.getElementById("detailCancelBtn").addEventListener("click", closeDetail);
+    document.getElementById("detailEditBtn").addEventListener("click", function(){ renderDetailEdit(book); });
+    document.getElementById("detailDeleteBtn").addEventListener("click", function(){
+      if(pendingDeleteId){ deleteBook(pendingDeleteId); }
+      closeDetail();
+    });
+  }
+
+  function renderDetailEdit(book){
+    detailBody.innerHTML =
+      '<h2>Edit Book</h2>' +
+      '<div class="modal-sub">update the details, then save</div>' +
+      '<div class="field field-tight">' +
+        '<label for="eTitle">Title</label>' +
+        '<input type="text" id="eTitle" maxlength="120" value="' + escapeHtml(book.title) + '">' +
+        '<div class="field-error" id="eErrTitle"></div>' +
+      '</div>' +
+      '<div id="editSeriesWrap"></div>' +
+      '<div class="field">' +
+        '<label for="eAuthor">Author</label>' +
+        '<input type="text" id="eAuthor" maxlength="90" value="' + escapeHtml(book.author) + '">' +
+        '<div class="field-error" id="eErrAuthor"></div>' +
+      '</div>' +
+      '<div class="field">' +
+        '<label for="eGenreInput">Genre(s) <span style="text-transform:none;">(optional)</span></label>' +
+        '<div class="genre-chips" id="eGenreChips"></div>' +
+        '<input type="text" id="eGenreInput" list="genreList" maxlength="40" autocomplete="off">' +
+        '<span class="hint">press Enter or comma to add another</span>' +
+      '</div>' +
+      '<div class="field">' +
+        '<label for="eDate">Date Added</label>' +
+        '<input type="date" id="eDate" value="' + escapeHtml(book.dateAdded || todayISO()) + '">' +
+      '</div>' +
+      '<div id="editNotesWrap"></div>' +
+      '<div class="modal-actions">' +
+        '<button type="button" class="btn btn-ghost" id="editCancelBtn">Cancel</button>' +
+        '<button type="button" class="btn btn-primary" id="editSaveBtn">Save Changes</button>' +
+      '</div>';
+
+    wireSeriesWrap("eSeries", document.getElementById("editSeriesWrap"), book.seriesName, book.seriesNo);
+    var editGenreChips = wireGenreChips("eGenre", book.genres || []);
+    wireNotesWrap("eNotes", document.getElementById("editNotesWrap"), book.rating, book.notes);
+
+    document.getElementById("editCancelBtn").addEventListener("click", function(){ renderDetailView(book); });
+    document.getElementById("editSaveBtn").addEventListener("click", function(){
+      var eTitle = document.getElementById("eTitle");
+      var eAuthor = document.getElementById("eAuthor");
+      var eDate = document.getElementById("eDate");
+      var title = eTitle.value.trim();
+      var author = eAuthor.value.trim();
+      var ok = true;
+      if(!title){ document.getElementById("eErrTitle").textContent = "please enter a title"; ok = false; }
+      else { document.getElementById("eErrTitle").textContent = ""; }
+      if(!author){ document.getElementById("eErrAuthor").textContent = "please enter an author"; ok = false; }
+      else { document.getElementById("eErrAuthor").textContent = ""; }
+      if(!ok) return;
+
+      var genres = editGenreChips.getGenres();
+      var series = readSeriesValues("eSeries");
+      var notes = readNotesValues("eNotes");
+      genres.forEach(function(g){ ensureGenreRegistered(g); });
+      updateBook(book.id, {
+        title: title,
+        author: author,
+        genres: genres,
+        seriesName: series.seriesName,
+        seriesNo: series.seriesNo,
+        dateAdded: eDate.value || book.dateAdded || todayISO(),
+        rating: notes.rating,
+        notes: notes.notes
+      });
+      closeDetail();
+    });
+  }
+
+  function closeDetail(){ detailBackdrop.hidden = true; pendingDeleteId = null; }
+  document.getElementById("detailClose").addEventListener("click", closeDetail);
+  detailBackdrop.addEventListener("click", function(e){ if(e.target === detailBackdrop) closeDetail(); });
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape"){ closeAdd(); closeDetail(); closePopup(); }
+  });
+
+  /* ---------------- boot ---------------- */
+  render();
+  initStorage();
+})();
+</script>
